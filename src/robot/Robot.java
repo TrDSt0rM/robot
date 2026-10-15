@@ -1,8 +1,9 @@
+package robot;
+
+import command.Command;
+import command.CommandParser;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Getter
 public class Robot implements BoardElement {
@@ -11,6 +12,7 @@ public class Robot implements BoardElement {
     @Setter private Direction direction;
     @Setter private Board plateau;
     private DroppedObject objetPorte;
+    private final CommandParser parser = new CommandParser();
 
     public Robot(Board plateau) {
         this(new Position(0, 0), Direction.EAST, plateau);
@@ -49,10 +51,10 @@ public class Robot implements BoardElement {
         if (this.position == null) return;
 
         Position nextPosition = switch (direction) {
-            case NORTH -> new Position(position.getX(), position.getY() + distance);
-            case SOUTH -> new Position(position.getX(), position.getY() - distance);
-            case EAST  -> new Position(position.getX() + distance, position.getY());
-            case WEST  -> new Position(position.getX() - distance, position.getY());
+            case Direction.NORTH -> new Position(position.getX(), position.getY() + distance);
+            case Direction.SOUTH -> new Position(position.getX(), position.getY() - distance);
+            case Direction.EAST  -> new Position(position.getX() + distance, position.getY());
+            case Direction.WEST  -> new Position(position.getX() - distance, position.getY());
         };
 
         setPosition(nextPosition);
@@ -61,35 +63,13 @@ public class Robot implements BoardElement {
     public void execute(String script) {
         if (script == null || script.isBlank()) return;
 
-        // Découpage ligne par ligne (prend en compte \n et \r\n)
         String[] lines = script.trim().split("\\R");
-
         for (String line : lines) {
             String trimmed = line.trim();
             if (trimmed.isEmpty()) continue;
 
-            // Découpage des éléments sur la ligne
-            String[] parts = trimmed.split("\\s+");
-            String command = parts[0];
-
-            switch (command) {
-                case "base" -> {
-                    int x = Integer.parseInt(parts[1]);
-                    int y = Integer.parseInt(parts[2]);
-                    setPosition(new Position(x, y));
-                }
-                case "dir" -> {
-                    setDirection(Direction.valueOf(parts[1]));
-                }
-                case "mov" -> {
-                    int distance = Integer.parseInt(parts[1]);
-                    move(distance);
-                }
-                case "drop" -> {
-                    drop();
-                }
-                default -> throw new IllegalArgumentException("Commande inconnue : " + command);
-            }
+            Command command = parser.parse(trimmed);
+            command.execute(this);
         }
     }
 }

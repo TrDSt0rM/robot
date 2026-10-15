@@ -1,3 +1,5 @@
+package robot;
+
 import lombok.*;
 
 @Getter

@@ -1,4 +1,6 @@
-public class DroppedObject implements BoardElement{
+package robot;
+
+public class DroppedObject implements BoardElement {
 
     private final String name;
 
