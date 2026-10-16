@@ -8,4 +8,9 @@ public interface Command {
     default boolean isRecordable() {
         return true;
     }
+
+    default Command inverse() {
+        throw new UnsupportedOperationException("Cette commande ne possède pas d'inverse.");
+    }
+
 }
