@@ -283,7 +283,6 @@ class RobotTest {
         robot.setDirection(Direction.EAST);
         robot.resetHistory();
 
-        // Script exact de l'exemple du sujet
         robot.execute("""
                 dir EAST
                 mov 5
@@ -294,11 +293,9 @@ class RobotTest {
                 wback
                 """);
 
-        // 1. Le robot doit être revenu exactement à son point de départ (0, 0)
         assertEquals(new Position(0, 0), robot.getPosition());
         assertSame(robot, board.getAt(new Position(0, 0)));
 
-        // 2. Il doit avoir retrouvé son orientation d'origine (EAST)
         assertEquals(Direction.EAST, robot.getDirection());
     }
 
@@ -313,7 +310,6 @@ class RobotTest {
                 wback
                 """);
 
-        // L'historique ne doit contenir que les mouvements physiques, pas l'ordre wback
         assertEquals(3, robot.getHistory().size());
         assertTrue(robot.getHistory().stream()
                 .noneMatch(c -> c instanceof WBackCommand));
@@ -322,18 +318,66 @@ class RobotTest {
     @Test
     @DisplayName("Étape 5 - Test unitaire direct de inverse() sur MoveCommand et DirectionCommand")
     void testInverseUnitaires() {
-        // MoveCommand : inverse de 5 est -5
         MoveCommand move = new MoveCommand(5);
         Command invMove = move.inverse();
         assertTrue(invMove instanceof MoveCommand);
         assertEquals(-5, ((MoveCommand) invMove).getMove());
 
-        // DirectionCommand : inverse rétablit la direction précédente
         robot.setDirection(Direction.WEST);
         DirectionCommand dirCmd = new DirectionCommand(Direction.NORTH);
         dirCmd.execute(robot); // previousDirection vaut WEST
         Command invDir = dirCmd.inverse();
         invDir.execute(robot);
         assertEquals(Direction.WEST, robot.getDirection());
+    }
+
+    // ==========================================
+    // TESTS ÉTAPE 6 : Optimiser un parcours
+    // ==========================================
+
+    @Test
+    @DisplayName("Étape 6 - Fusion de plusieurs déplacements successifs")
+    void testFusionDeplacements() {
+        robot.resetHistory();
+        robot.execute("""
+                mov 10
+                mov 20
+                mov 5
+                """);
+
+        List<Command> optimized = robot.optimizePath();
+        assertEquals(1, optimized.size());
+        assertTrue(optimized.get(0) instanceof MoveCommand);
+        assertEquals(35, ((MoveCommand) optimized.get(0)).getMove());
+    }
+
+    @Test
+    @DisplayName("Étape 6 - Fusion de plusieurs changements de direction successifs")
+    void testFusionDirections() {
+        robot.resetHistory();
+        robot.execute("""
+                dir EAST
+                dir SOUTH
+                dir NORTH
+                """);
+
+        List<Command> optimized = robot.optimizePath();
+        assertEquals(1, optimized.size());
+        assertTrue(optimized.get(0) instanceof DirectionCommand);
+        assertEquals(Direction.NORTH, ((DirectionCommand) optimized.get(0)).getDirection());
+    }
+
+    @Test
+    @DisplayName("Étape 6 - Commandes incompatibles non fusionnées")
+    void testCommandesIncompatiblesNonFusionnees() {
+        robot.resetHistory();
+        robot.execute("""
+                mov 10
+                dir NORTH
+                mov 5
+                """);
+
+        List<Command> optimized = robot.optimizePath();
+        assertEquals(3, optimized.size());
     }
 }

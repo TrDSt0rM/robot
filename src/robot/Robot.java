@@ -197,6 +197,32 @@ public class Robot implements BoardElement {
     }
 
     /**
+     * Optimize the path by merging consecutive commands that can be merged
+     * @return A list of optimized commands
+     */
+    public List<Command> optimizePath() {
+        List<Command> optimized = new ArrayList<>(this.history);
+        boolean merged = true;
+
+        while (merged) {
+            merged = false;
+            for (int i = 0; i < optimized.size() - 1; i++) {
+                Command current = optimized.get(i);
+                Command next = optimized.get(i + 1);
+
+                List<Command> result = current.mergeWith(next);
+                if (result.size() == 1) {
+                    optimized.remove(i + 1);
+                    optimized.set(i, result.get(0));
+                    merged = true;
+                    break;
+                }
+            }
+        }
+        return optimized;
+    }
+
+    /**
      * Execute a script of commands, each command on a new line. Empty lines
      * are ignored.
      * @param script The script to execute
@@ -214,4 +240,6 @@ public class Robot implements BoardElement {
             command.execute(this);
         }
     }
+
+
 }
