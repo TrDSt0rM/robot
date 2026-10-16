@@ -4,6 +4,8 @@ import lombok.Getter;
 import robot.Direction;
 import robot.Robot;
 
+import java.util.List;
+
 public class DirectionCommand implements Command {
 
     @Getter
@@ -28,5 +30,15 @@ public class DirectionCommand implements Command {
     @Override
     public Command inverse() {
         return new DirectionCommand(this.previousDirection, this.direction);
+    }
+
+    @Override
+    public List<Command> mergeWith(Command other) {
+        return other.mergeWithDirection(this);
+    }
+
+    @Override
+    public List<Command> mergeWithDirection(DirectionCommand previous) {
+        return List.of(this);
     }
 }
