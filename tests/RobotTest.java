@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class RobotTest {
@@ -16,6 +18,10 @@ class RobotTest {
         board = new Board();
         robot = new Robot(board);
     }
+
+    // ==========================================
+    // TESTS ÉTAPE 1 : Modéliser le monde du robot
+    // ==========================================
 
     @Test
     @DisplayName("Le robot doit démarrer avec les valeurs par défaut spécifiées")
@@ -42,17 +48,17 @@ class RobotTest {
         Position depart = new Position(2, 3);
         robot.setPosition(depart);
 
-        // Au départ, le robot occupe la case[cite: 2]
+        // Au départ, le robot occupe la case
         assertSame(robot, board.getAt(depart));
 
         // Le robot avance vers l'EST
         robot.move(5);
         Position arrivee = new Position(7, 3);
 
-        // La nouvelle case contient le robot[cite: 2]
+        // La nouvelle case contient le robot
         assertSame(robot, board.getAt(arrivee));
 
-        // L'ancienne case a restauré son terrain[cite: 2]
+        // L'ancienne case a restauré son terrain
         BoardElement elementAncienneCase = board.getAt(depart);
         assertNotSame(robot, elementAncienneCase);
         assertTrue(elementAncienneCase instanceof Terrain, "L'ancienne case doit être redevenue un Terrain");
@@ -105,6 +111,11 @@ class RobotTest {
         assertNotSame(robot, board.getAt(pos1));
     }
 
+    // ==========================================
+    // TESTS ÉTAPE 2 & 3 : Exécuter des scripts
+    //      et Introduire le patron Command
+    // ==========================================
+
     @Test
     @DisplayName("Étape 2 - Test officiel du script complet menant à (9, 4)")
     void testExecuteScriptOfficiel() {
@@ -150,10 +161,114 @@ class RobotTest {
 
         assertEquals(objet, robot.getObjetPorte());
 
-        // Exécution de l'ordre drop
         robot.execute("drop");
 
-        // Le robot ne porte plus l'objet
         assertNull(robot.getObjetPorte());
+    }
+
+    // ==========================================
+    // TESTS ÉTAPE 4 : Enregistrer et rejouer
+    // ==========================================
+
+    @Test
+    @DisplayName("Étape 4 - Scénario officiel de l'énoncé pour le replay")
+    void testReplayScenarioEnonce() {
+        robot.execute("""
+                base 4 1
+                dir EAST
+                mov 2
+                mov 3
+                dir NORTH
+                mov 3
+                """);
+        assertEquals(new Position(9, 4), robot.getPosition());
+
+        robot.setPosition(new Position(5, 1));
+        robot.setDirection(Direction.EAST);
+
+        robot.resetHistory();
+        robot.execute("""
+                mov 2
+                mov 3
+                dir NORTH
+                mov 3
+                """);
+
+        robot.stopRecording();
+        robot.setPosition(new Position(5, 1));
+        robot.setDirection(Direction.EAST);
+        robot.startRecording();
+
+        robot.execute("replay");
+        assertEquals(new Position(10, 4), robot.getPosition());
+    }
+
+    @Test
+    @DisplayName("Étape 4 - Vérifier que les commandes de contrôle ne sont pas enregistrées")
+    void testCommandesDeControleNonEnregistrees() {
+        robot.resetHistory();
+
+        robot.execute("""
+                startM
+                mov 3
+                resM
+                mov 2
+                replay
+                stopM
+                """);
+
+        assertEquals(1, robot.getHistory().size());
+        assertTrue(robot.getHistory().get(0) instanceof MoveCommand);
+    }
+
+    @Test
+    @DisplayName("Étape 4 - Vérifier que stopM empêche les commandes suivantes d'être enregistrées")
+    void testStopMEmpecheEnregistrement() {
+        robot.resetHistory();
+
+        robot.execute("""
+                mov 2
+                stopM
+                mov 5
+                dir NORTH
+                startM
+                mov 1
+                """);
+
+        assertEquals(2, robot.getHistory().size());
+        assertEquals(new Position(7, 1), robot.getPosition());
+    }
+
+    @Test
+    @DisplayName("Étape 4 - Vérifier que resM vide l'historique")
+    void testResMVideHistorique() {
+        robot.execute("""
+                mov 3
+                dir SOUTH
+                mov 1
+                """);
+        assertFalse(robot.getHistory().isEmpty());
+
+        robot.execute("resM"); // Effacement de l'historique
+
+        assertTrue(robot.getHistory().isEmpty(), "L'historique doit être complètement vide après resM");
+    }
+
+    @Test
+    @DisplayName("Étape 4 - Vérifier que les commandes sont enregistrées dans le bon ordre")
+    void testOrdreDesCommandesEnregistrees() {
+        robot.resetHistory();
+
+        robot.execute("""
+                mov 4
+                dir NORTH
+                mov 1
+                """);
+
+        List<Command> history = robot.getHistory();
+        assertEquals(3, history.size());
+        assertTrue(history.get(0) instanceof MoveCommand);
+        assertTrue(history.get(1) instanceof DirectionCommand);
+        assertTrue(history.get(2) instanceof MoveCommand);
     }
 }
