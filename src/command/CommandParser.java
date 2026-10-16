@@ -18,6 +18,8 @@ public class CommandParser {
         factories.put("stopM", args -> new StopMCommand());
         factories.put("resM", args -> new ResMCommand());
         factories.put("replay", args -> new ReplayCommand());
+
+        factories.put("wback", args -> new WBackCommand());
     }
 
     public Command parse(String line) {
