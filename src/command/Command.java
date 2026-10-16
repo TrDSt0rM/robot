@@ -4,4 +4,8 @@ import robot.Robot;
 
 public interface Command {
     void execute(Robot robot);
+
+    default boolean isRecordable() {
+        return true;
+    }
 }

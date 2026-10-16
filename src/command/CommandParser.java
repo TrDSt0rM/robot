@@ -13,6 +13,11 @@ public class CommandParser {
         factories.put("dir",  args -> new DirectionCommand(Direction.valueOf(args[1])));
         factories.put("mov",  args -> new MoveCommand(Integer.parseInt(args[1])));
         factories.put("drop", args -> new DropCommand());
+
+        factories.put("startM", args -> new StartMCommand());
+        factories.put("stopM", args -> new StopMCommand());
+        factories.put("resM", args -> new ResMCommand());
+        factories.put("replay", args -> new ReplayCommand());
     }
 
     public Command parse(String line) {
