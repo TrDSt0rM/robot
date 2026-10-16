@@ -27,14 +27,14 @@ class RobotTest {
     @DisplayName("Le robot doit démarrer avec les valeurs par défaut spécifiées")
     void testInitialState() {
         assertEquals(new Position(0, 0), robot.getPosition());
-        assertEquals(Direction.EAST, robot.getDirection()); // Orienté vers l'Est par défaut[cite: 2]
+        assertEquals(Direction.EAST, robot.getDirection()); // Orienté vers l'Est par défaut
         assertSame(robot, board.getAt(new Position(0, 0)));
     }
 
     @Test
     @DisplayName("Déplacement et test officiel de l'énoncé")
     void testDeplacementEnonce() {
-        // Test demandé explicitement dans l'Étape 1[cite: 2]
+        // Test demandé explicitement dans l'Étape 1
         robot.setPosition(new Position(4, 1));
         robot.move(10);
 
@@ -106,7 +106,7 @@ class RobotTest {
         robot.setPosition(pos2);
         assertSame(robot, board.getAt(pos2));
 
-        // pos1 doit de nouveau être un Terrain[cite: 2]
+        // pos1 doit de nouveau être un Terrain
         assertTrue(board.getAt(pos1) instanceof Terrain);
         assertNotSame(robot, board.getAt(pos1));
     }
@@ -249,7 +249,7 @@ class RobotTest {
                 """);
         assertFalse(robot.getHistory().isEmpty());
 
-        robot.execute("resM"); // Effacement de l'historique
+        robot.execute("resM");
 
         assertTrue(robot.getHistory().isEmpty(), "L'historique doit être complètement vide après resM");
     }
@@ -270,5 +270,70 @@ class RobotTest {
         assertTrue(history.get(0) instanceof MoveCommand);
         assertTrue(history.get(1) instanceof DirectionCommand);
         assertTrue(history.get(2) instanceof MoveCommand);
+    }
+
+    // ==========================================
+    // TESTS ÉTAPE 5 : Retour automatique (wback)
+    // ==========================================
+
+    @Test
+    @DisplayName("Étape 5 - Scénario officiel de l'énoncé pour wback")
+    void testWBackScenarioEnonce() {
+        robot.setPosition(new Position(0, 0));
+        robot.setDirection(Direction.EAST);
+        robot.resetHistory();
+
+        // Script exact de l'exemple du sujet
+        robot.execute("""
+                dir EAST
+                mov 5
+                dir NORTH
+                mov 3
+                dir EAST
+                mov 4
+                wback
+                """);
+
+        // 1. Le robot doit être revenu exactement à son point de départ (0, 0)
+        assertEquals(new Position(0, 0), robot.getPosition());
+        assertSame(robot, board.getAt(new Position(0, 0)));
+
+        // 2. Il doit avoir retrouvé son orientation d'origine (EAST)
+        assertEquals(Direction.EAST, robot.getDirection());
+    }
+
+    @Test
+    @DisplayName("Étape 5 - Vérifier que wback n'est pas lui-même enregistré dans l'historique")
+    void testWBackNonEnregistre() {
+        robot.resetHistory();
+        robot.execute("""
+                mov 2
+                dir NORTH
+                mov 3
+                wback
+                """);
+
+        // L'historique ne doit contenir que les mouvements physiques, pas l'ordre wback
+        assertEquals(3, robot.getHistory().size());
+        assertTrue(robot.getHistory().stream()
+                .noneMatch(c -> c instanceof WBackCommand));
+    }
+
+    @Test
+    @DisplayName("Étape 5 - Test unitaire direct de inverse() sur MoveCommand et DirectionCommand")
+    void testInverseUnitaires() {
+        // MoveCommand : inverse de 5 est -5
+        MoveCommand move = new MoveCommand(5);
+        Command invMove = move.inverse();
+        assertTrue(invMove instanceof MoveCommand);
+        assertEquals(-5, ((MoveCommand) invMove).getMove());
+
+        // DirectionCommand : inverse rétablit la direction précédente
+        robot.setDirection(Direction.WEST);
+        DirectionCommand dirCmd = new DirectionCommand(Direction.NORTH);
+        dirCmd.execute(robot); // previousDirection vaut WEST
+        Command invDir = dirCmd.inverse();
+        invDir.execute(robot);
+        assertEquals(Direction.WEST, robot.getDirection());
     }
 }

@@ -67,10 +67,18 @@ public class Robot implements BoardElement {
         setPosition(position);
     }
 
+    /**
+     * Get the history of executed commands
+     * @return An unmodifiable list of executed commands
+     */
     public List<Command> getHistory() {
         return Collections.unmodifiableList(this.history);
     }
 
+    /**
+     * Set the position of the robot on the board
+     * @param newPosition The new position of the robot
+     */
     public void setPosition(Position newPosition) {
         if (this.plateau != null && this.position != null) {
             this.plateau.remove(this.position);
@@ -81,10 +89,17 @@ public class Robot implements BoardElement {
         }
     }
 
+    /**
+     * Pick up an object from the board
+     * @param obj The object to pick up
+     */
     public void pickUp(DroppedObject obj) {
         this.objetPorte = obj;
     }
 
+    /**
+     * Drop the object carried by the robot on the board
+     */
     public void drop(){
         if (this.objetPorte != null && this.plateau != null && this.position != null) {
 
@@ -93,6 +108,10 @@ public class Robot implements BoardElement {
         }
     }
 
+    /**
+     * Move the robot in the current direction by a certain distance
+     * @param distance The distance to move the robot
+     */
     public void move(int distance) {
         if (this.position == null) return;
 
@@ -107,24 +126,41 @@ public class Robot implements BoardElement {
     }
 
     // ========== Command execution ==========
+    /**
+     * Start recording commands
+     */
     public void startRecording() {
         this.recording = true;
     }
 
+    /**
+     * Stop recording commands
+     */
     public void stopRecording() {
         this.recording = false;
     }
 
+    /**
+     * Reset the history of executed commands
+     */
     public void resetHistory() {
         this.history.clear();
     }
 
+    /**
+     * Record a command in the history if recording is enabled and the command is recordable
+     * @param command The command to record
+     */
     public void recordCommand(Command command) {
         if (this.recording && command.isRecordable()) {
             this.history.add(command);
         }
     }
 
+    /**
+     * Replay the commands in the history in order, without recording them
+     * again
+     */
     public void replay() {
         List<Command> commandsToReplay = new ArrayList<>(this.history);
         boolean wasRecording = this.recording;
@@ -139,6 +175,32 @@ public class Robot implements BoardElement {
         }
     }
 
+    /**
+     * Revert the robot to its previous state by executing the inverse of each
+     * command in the history in reverse order
+     */
+    public void goBack() {
+        List<Command> commandsToInvert = new ArrayList<>(this.history);
+
+        boolean wasRecording = this.recording;
+        this.recording = false;
+
+        try {
+            for (int i = commandsToInvert.size() - 1; i >= 0; i--) {
+                Command command = commandsToInvert.get(i);
+                Command inverseCmd = command.inverse();
+                inverseCmd.execute(this);
+            }
+        } finally {
+            this.recording = wasRecording;
+        }
+    }
+
+    /**
+     * Execute a script of commands, each command on a new line. Empty lines
+     * are ignored.
+     * @param script The script to execute
+     */
     public void execute(String script) {
         if (script == null || script.isBlank()) return;
 
